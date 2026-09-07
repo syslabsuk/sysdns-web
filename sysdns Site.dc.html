@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;600;700&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet" />
+<style>
+:root { --iris: #8052ff; --saffron: #ffb829; --verdant: #15846e; }
+html { background: #000; scroll-snap-type: y mandatory; scroll-behavior: smooth; }
+/* free-scroll when a viewport is too short to hold a section */
+@media (max-height: 820px) { html { scroll-snap-type: y proximity; } }
+/* snapping stays; only the animated interpolation is dropped */
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body { margin: 0; background: #000; color: #ffffff; font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; font-feature-settings: "ss01" on; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+a { color: #ffffff; text-decoration: none; }
+a:hover { color: var(--saffron, #ffb829); }
+::selection { background: var(--iris, #8052ff); color: #ffffff; }
+@keyframes sysdnsFloat { 0% { transform: translateY(0); } 50% { transform: translateY(-8px); } 100% { transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</helmet>
+
+<div style="position: relative; background: #000; min-height: 100vh;">
+
+  <div id="sd-progress" style="position: fixed; top: 0; left: 0; height: 2px; width: 0%; background: var(--iris, #8052ff); z-index: 60;"></div>
+
+  <canvas id="sd-scene" style="position: fixed; inset: 0; width: 100%; height: 100%; display: block; z-index: 0; pointer-events: none;"></canvas>
+  <div style="position: fixed; inset: 0; z-index: 1; pointer-events: none; background: radial-gradient(120% 80% at 50% 50%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.55) 100%);"></div>
+
+  <header style="position: fixed; top: 0; left: 0; right: 0; z-index: 50; display: flex; justify-content: center; padding: 24px;">
+    <nav style="width: 100%; max-width: 1280px; display: flex; align-items: center; gap: 36px;">
+      <a href="#top" style="display: flex; align-items: center; gap: 12px;">
+        <span style="width: 16px; height: 14px; display: block; background: linear-gradient(160deg, var(--iris, #8052ff), var(--verdant, #15846e)); clip-path: polygon(50% 0%, 100% 100%, 0% 100%);"></span>
+        <span style="font-size: 15px; font-weight: 600; letter-spacing: 0.35px; color: #ffffff;">sysdns</span>
+      </a>
+      <div style="flex: 1;"></div>
+      <div style="display: flex; align-items: center; gap: 30px;">
+        <a href="#manifesto" style="font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.35px; color: #9a9a9a;" style-hover="color: #ffffff;">Manifesto</a>
+        <a href="#architecture" style="font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.35px; color: #9a9a9a;" style-hover="color: #ffffff;">Architecture</a>
+        <a href="#policy" style="font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.35px; color: #9a9a9a;" style-hover="color: #ffffff;">Policy</a>
+        <a href="#scale" style="font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.35px; color: #9a9a9a;" style-hover="color: #ffffff;">Scale</a>
+        <a href="#access" style="background: var(--iris, #8052ff); color: #ffffff; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.35px; border-radius: 22.5px; padding: 14px 18px; line-height: 1; transition: transform 220ms cubic-bezier(0.2,0.7,0.2,1), filter 220ms ease;" style-hover="transform: translateY(-2px); filter: brightness(1.12); color: #ffffff;">Request access</a>
+      </div>
+    </nav>
+  </header>
+
+  <main id="top" style="position: relative; z-index: 2; max-width: 1280px; margin: 0 auto; padding: 0 24px;">
+
+    <section style="min-height: 100vh; box-sizing: border-box; scroll-snap-align: start; display: grid; grid-template-columns: repeat(12, 1fr); align-content: center; padding: 120px 0 72px; gap: 24px;">
+      <div style="grid-column: span 7; display: flex; flex-direction: column; gap: 30px;">
+        <div data-reveal="0" style="display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.35px; color: var(--saffron, #ffb829);">
+          <span style="width: 8px; height: 7px; display: block; background: var(--saffron, #ffb829); clip-path: polygon(50% 0%, 100% 100%, 0% 100%);"></span>
+          <span>DNS-over-QUIC relay</span>
+        </div>
+        <h1 data-reveal="1" style="margin: 0; font-size: clamp(46px, 8vw, 113px); font-weight: 400; line-height: 1.05; letter-spacing: -0.04em; color: #ffffff; text-wrap: balance;">Resolve everything.<br />Reveal nothing.</h1>
+        <p data-reveal="2" style="margin: 0; max-width: 480px; font-size: 18px; font-weight: 200; line-height: 1.5; color: #ffffff;">sysdns puts a caching resolver on every device, tunnels each query to your own relay over mTLS DNS-over-QUIC, and answers from a shared cache — with per-group policy enforced before anything reaches a public resolver.</p>
+        <div data-reveal="3" style="display: flex; align-items: center; gap: 30px; padding-top: 6px;">
+          <a href="#access" style="background: var(--iris, #8052ff); color: #ffffff; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.35px; border-radius: 22.5px; padding: 15px 20px; line-height: 1; transition: transform 220ms cubic-bezier(0.2,0.7,0.2,1), filter 220ms ease;" style-hover="transform: translateY(-2px); filter: brightness(1.12); color: #ffffff;">Request access</a>
+          <a href="#architecture" style="font-size: 14px; font-weight: 400; color: #9a9a9a;" style-hover="color: #ffffff;">Read the architecture →</a>
+        </div>
+      </div>
+      <div style="grid-column: span 5;"></div>
+      <div data-reveal="4" style="grid-column: span 12; display: flex; gap: 36px; flex-wrap: wrap; padding-top: 44px; font-size: 12px; line-height: 1.5; color: #9a9a9a; font-family: 'JetBrains Mono', ui-monospace, monospace;">
+        <span>agent · udp/tcp 53 → doq</span>
+        <span>backend · mtls relay + shared cache</span>
+        <span>admin · policy, tokens, audit</span>
+        <span>linux · macos</span>
+      </div>
+    </section>
+
+    <section id="manifesto" style="min-height: 100vh; box-sizing: border-box; scroll-snap-align: start; display: grid; grid-template-columns: repeat(12, 1fr); align-content: center; padding: 72px 0; gap: 24px;">
+      <div style="grid-column: span 5;"></div>
+      <div style="grid-column: span 7; display: flex; flex-direction: column; gap: 30px;">
+        <div data-reveal="0" style="font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.35px; color: var(--saffron, #ffb829);">Manifesto</div>
+        <h2 data-reveal="1" style="margin: 0; font-size: clamp(34px, 5.2vw, 78px); font-weight: 400; line-height: 1.1; letter-spacing: -0.04em; color: #ffffff;">Plaintext DNS is a broadcast.</h2>
+        <p data-reveal="2" style="margin: 0; max-width: 520px; font-size: 18px; font-weight: 200; line-height: 1.5; color: #bdbdbd;">Port 53 tells every hop on the path what a device is about to open. sysdns replaces that with one authenticated tunnel per device: the resolver runs locally, collapses concurrent identical lookups into a single upstream call, and forwards only what it can't already answer.</p>
+        <p data-reveal="3" style="margin: 0; max-width: 520px; font-size: 18px; font-weight: 200; line-height: 1.5; color: #9a9a9a;">No plaintext queries on the wire. No shared credential doing everything. No resolver you don't run.</p>
+      </div>
+    </section>
+
+    <section id="architecture" style="min-height: 100vh; box-sizing: border-box; scroll-snap-align: start; display: grid; align-content: center; padding: 72px 0; gap: 44px;">
+      <div style="display: flex; flex-direction: column; gap: 24px; max-width: 720px;">
+        <div data-reveal="0" style="font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.35px; color: var(--saffron, #ffb829);">Architecture</div>
+        <h2 data-reveal="1" style="margin: 0; font-size: clamp(32px, 4.4vw, 66px); font-weight: 400; line-height: 1.1; letter-spacing: -0.04em; color: #ffffff;">Three components. One path.</h2>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 60px 36px;">
+        <div data-reveal="2" style="display: flex; flex-direction: column; gap: 18px;">
+          <div style="font-size: 12px; font-weight: 400; text-transform: uppercase; letter-spacing: 0.35px; color: var(--iris, #8052ff); font-family: 'JetBrains Mono', ui-monospace, monospace;">01 / agent</div>
+          <h3 style="margin: 0; font-size: 27px; font-weight: 400; line-height: 1; color: #ffffff;">Runs on the device</h3>
+          <p style="margin: 0; font-size: 18px; font-weight: 200; line-height: 1.5; color: #bdbdbd;">A caching, forwarding resolver on UDP and TCP. Answers from an in-memory TTL/LRU cache, otherwise forwards over DNS-over-QUIC to a pool of relays it round-robins across.</p>
+        </div>
+        <div data-reveal="3" style="display: flex; flex-direction: column; gap: 18px;">
+          <div style="font-size: 12px; font-weight: 400; text-transform: uppercase; letter-spacing: 0.35px; color: var(--iris, #8052ff); font-family: 'JetBrains Mono', ui-monospace, monospace;">02 / backend</div>
+          <h3 style="margin: 0; font-size: 27px; font-weight: 400; line-height: 1; color: #ffffff;">Relays and enforces</h3>
+          <p style="margin: 0; font-size: 18px; font-weight: 200; line-height: 1.5; color: #bdbdbd;">Terminates mTLS DoQ from roaming agents, answers from a large shared cache, and forwards the rest upstream — applying the per-agent and per-group blocklist and whitelist on the way through.</p>
+        </div>
+        <div data-reveal="4" style="display: flex; flex-direction: column; gap: 18px;">
+          <div style="font-size: 12px; font-weight: 400; text-transform: uppercase; letter-spacing: 0.35px; color: var(--iris, #8052ff); font-family: 'JetBrains Mono', ui-monospace, monospace;">03 / admin</div>
+          <h3 style="margin: 0; font-size: 27px; font-weight: 400; line-height: 1; color: #ffffff;">Holds the credential</h3>
+          <p style="margin: 0; font-size: 18px; font-weight: 200; line-height: 1.5; color: #bdbdbd;">Operators never touch the admin mTLS key. This server holds it, proxies every action, and records who did what — the only place individual-operator attribution exists.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="policy" style="min-height: 100vh; box-sizing: border-box; scroll-snap-align: start; display: grid; grid-template-columns: repeat(12, 1fr); align-content: center; padding: 72px 0; gap: 24px;">
+      <div style="grid-column: span 7; display: flex; flex-direction: column; gap: 30px;">
+        <div data-reveal="0" style="font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.35px; color: var(--saffron, #ffb829);">Policy</div>
+        <h2 data-reveal="1" style="margin: 0; font-size: clamp(34px, 5.2vw, 78px); font-weight: 400; line-height: 1.1; letter-spacing: -0.04em; color: #ffffff;">Blocklists that follow the device.</h2>
+        <p data-reveal="2" style="margin: 0; max-width: 520px; font-size: 18px; font-weight: 200; line-height: 1.5; color: #bdbdbd;">Group agents, attach blocklists and whitelists, and move a device between groups without touching the device. Policy lives in the relay, so a laptop on hotel wifi gets the same answers it gets at a desk.</p>
+        <p data-reveal="3" style="margin: 0; max-width: 520px; font-size: 18px; font-weight: 200; line-height: 1.5; color: #9a9a9a;">Every mutating action — group created, domain added, agent reassigned — lands in the audit log with the operator, the target and the timestamp.</p>
+      </div>
+      <div style="grid-column: span 5;"></div>
+    </section>
+
+    <section id="enrollment" style="min-height: 100vh; box-sizing: border-box; scroll-snap-align: start; display: grid; grid-template-columns: repeat(12, 1fr); align-content: center; padding: 72px 0; gap: 24px;">
+      <div style="grid-column: span 4;"></div>
+      <div style="grid-column: span 8; display: flex; flex-direction: column; gap: 30px;">
+        <div data-reveal="0" style="font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.35px; color: var(--saffron, #ffb829);">Enrollment</div>
+        <h2 data-reveal="1" style="margin: 0; font-size: clamp(32px, 4.6vw, 66px); font-weight: 400; line-height: 1.1; letter-spacing: -0.04em; color: #ffffff;">One token. Then a key that never travels.</h2>
+        <p data-reveal="2" style="margin: 0; max-width: 560px; font-size: 18px; font-weight: 200; line-height: 1.5; color: #bdbdbd;">An operator mints a registration token; the device presents it once. The agent generates its own ECDSA P-256 keypair locally, submits a CSR, and persists the signed certificate at 0600. The private key is never transmitted, and subsequent runs skip registration entirely.</p>
+        <div data-reveal="3" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 36px; max-width: 720px; padding-top: 18px;">
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.35px; color: var(--iris, #8052ff); font-family: 'JetBrains Mono', ui-monospace, monospace;">Group-scoped</div>
+            <p style="margin: 0; font-size: 18px; font-weight: 200; line-height: 1.5; color: #bdbdbd;">Multi-use. Enrolls any number of devices straight into the chosen group.</p>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.35px; color: var(--iris, #8052ff); font-family: 'JetBrains Mono', ui-monospace, monospace;">Targeted</div>
+            <p style="margin: 0; font-size: 18px; font-weight: 200; line-height: 1.5; color: #bdbdbd;">Single-use. The first device wins; a concurrent race has exactly one winner.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="observability" style="min-height: 100vh; box-sizing: border-box; scroll-snap-align: start; display: grid; align-content: center; padding: 72px 0; gap: 44px;">
+      <div style="display: flex; flex-direction: column; gap: 24px; max-width: 640px;">
+        <div data-reveal="0" style="font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.35px; color: var(--saffron, #ffb829);">Observability</div>
+        <h2 data-reveal="1" style="margin: 0; font-size: clamp(32px, 4.4vw, 66px); font-weight: 400; line-height: 1.1; letter-spacing: -0.04em; color: #ffffff;">Every answer, accounted for.</h2>
+        <p data-reveal="2" style="margin: 0; font-size: 18px; font-weight: 200; line-height: 1.5; color: #bdbdbd;">Resolution metrics roll up by source — a registered agent or a direct client address — and drill down to individual lookups with the domain, the verdict and where the answer came from.</p>
+      </div>
+      <div data-reveal="3" style="display: flex; flex-direction: column; gap: 12px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 13px; line-height: 1.5; max-width: 780px;">
+        <div style="display: grid; grid-template-columns: 1.6fr 1fr 0.9fr; gap: 18px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.35px; color: #9a9a9a; padding-bottom: 6px;">
+          <span>domain</span><span>source</span><span>result</span>
+        </div>
+        <div id="sd-stream" style="display: flex; flex-direction: column; gap: 12px;">
+          <div style="display: grid; grid-template-columns: 1.6fr 1fr 0.9fr; gap: 18px; color: #bdbdbd;"><span>updates.internal.corp</span><span style="color: #9a9a9a;">agent-04f1</span><span style="color: #ffffff;">CACHE</span></div>
+          <div style="display: grid; grid-template-columns: 1.6fr 1fr 0.9fr; gap: 18px; color: #bdbdbd;"><span>telemetry.adnet.io</span><span style="color: #9a9a9a;">agent-9c07</span><span style="color: var(--saffron, #ffb829);">BLOCKED</span></div>
+          <div style="display: grid; grid-template-columns: 1.6fr 1fr 0.9fr; gap: 18px; color: #bdbdbd;"><span>api.stripe.com</span><span style="color: #9a9a9a;">agent-2b8d</span><span style="color: #ffffff;">UPSTREAM</span></div>
+          <div style="display: grid; grid-template-columns: 1.6fr 1fr 0.9fr; gap: 18px; color: #bdbdbd;"><span>registry.npmjs.org</span><span style="color: #9a9a9a;">10.42.7.19</span><span style="color: #ffffff;">CACHE</span></div>
+          <div style="display: grid; grid-template-columns: 1.6fr 1fr 0.9fr; gap: 18px; color: #bdbdbd;"><span>login.microsoftonline.com</span><span style="color: #9a9a9a;">agent-71aa</span><span style="color: #ffffff;">CACHE</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="scale" style="min-height: 100vh; box-sizing: border-box; scroll-snap-align: start; display: grid; grid-template-columns: repeat(12, 1fr); align-content: center; padding: 72px 0; gap: 24px;">
+      <div style="grid-column: span 7; display: flex; flex-direction: column; gap: 30px;">
+        <div data-reveal="0" style="font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.35px; color: var(--saffron, #ffb829);">Scale</div>
+        <h2 data-reveal="1" style="margin: 0; font-size: clamp(34px, 5.2vw, 78px); font-weight: 400; line-height: 1.1; letter-spacing: -0.04em; color: #ffffff;">Add relays, not migrations.</h2>
+        <p data-reveal="2" style="margin: 0; max-width: 520px; font-size: 18px; font-weight: 200; line-height: 1.5; color: #bdbdbd;">Run as many relay instances as you need against one shared policy store. Each keeps a fast in-memory read cache of that policy; agents already round-robin across whichever instances they're pointed at, so capacity is a deployment decision, not a rewrite.</p>
+      </div>
+      <div style="grid-column: span 5;"></div>
+    </section>
+
+    <section id="access" style="min-height: 100vh; box-sizing: border-box; scroll-snap-align: start; display: grid; align-content: center; justify-items: start; padding: 72px 0 56px; gap: 32px;">
+      <h2 data-reveal="0" style="margin: 0; max-width: 900px; font-size: clamp(40px, 7vw, 96px); font-weight: 400; line-height: 1.05; letter-spacing: -0.04em; color: #ffffff;">Take DNS off the wire.</h2>
+      <p data-reveal="1" style="margin: 0; max-width: 480px; font-size: 18px; font-weight: 200; line-height: 1.5; color: #bdbdbd;">Self-hosted, three binaries, one Postgres. Early access is open to teams running their own infrastructure.</p>
+      <div data-reveal="2" style="display: flex; align-items: center; gap: 30px;">
+        <a href="#top" style="background: var(--iris, #8052ff); color: #ffffff; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.35px; border-radius: 22.5px; padding: 15px 20px; line-height: 1; transition: transform 220ms cubic-bezier(0.2,0.7,0.2,1), filter 220ms ease;" style-hover="transform: translateY(-2px); filter: brightness(1.12); color: #ffffff;">Request access</a>
+        <a href="#manifesto" style="font-size: 14px; color: #9a9a9a;" style-hover="color: #ffffff;">Read the manifesto →</a>
+      </div>
+    </section>
+
+    <footer style="scroll-snap-align: end; display: flex; flex-wrap: wrap; align-items: center; gap: 30px; padding: 36px 0 60px; font-size: 12px; line-height: 1.5; color: #9a9a9a;">
+      <span style="display: flex; align-items: center; gap: 12px; color: #ffffff;">
+        <span style="width: 10px; height: 9px; display: block; background: linear-gradient(160deg, var(--iris, #8052ff), var(--verdant, #15846e)); clip-path: polygon(50% 0%, 100% 100%, 0% 100%);"></span>
+        sysdns
+      </span>
+      <div style="flex: 1;"></div>
+      <a href="#architecture" style="color: #9a9a9a;" style-hover="color: #ffffff;">Agent</a>
+      <a href="#architecture" style="color: #9a9a9a;" style-hover="color: #ffffff;">Backend</a>
+      <a href="#policy" style="color: #9a9a9a;" style-hover="color: #ffffff;">Admin</a>
+      <a href="#enrollment" style="color: #9a9a9a;" style-hover="color: #ffffff;">Enrollment</a>
+      <span>Self-hosted DNS privacy</span>
+    </footer>
+
+  </main>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;accentColor&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#8052ff&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;options&quot;:[&quot;#8052ff&quot;,&quot;#5ee8ff&quot;,&quot;#ff5ec4&quot;,&quot;#15846e&quot;],&quot;section&quot;:&quot;Brand&quot;},&quot;particleCount&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:4000,&quot;min&quot;:800,&quot;max&quot;:12000,&quot;step&quot;:400,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Constellation&quot;},&quot;motionIntensity&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:1,&quot;min&quot;:0,&quot;max&quot;:2,&quot;step&quot;:0.1,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Constellation&quot;}}">
+class Component extends DCLogic {
+  componentDidMount() {
+    this.applyAccent();
+    this.initReveals();
+    this.initStream();
+    this.initProgress();
+    this.waitForThree();
+  }
+
+  componentDidUpdate(prev) {
+    this.applyAccent();
+    const nextCount = this.props.particleCount ?? 5200;
+    if (prev && (prev.particleCount ?? 5200) !== nextCount && this.rebuildPoints) {
+      this.rebuildPoints(Math.max(800, Math.min(12000, nextCount)));
+    }
+  }
+
+  componentWillUnmount() {
+    this.dead = true;
+    if (this._raf) cancelAnimationFrame(this._raf);
+    if (this._onResize) window.removeEventListener('resize', this._onResize);
+    if (this._onMove) window.removeEventListener('pointermove', this._onMove);
+    if (this._onScroll) window.removeEventListener('scroll', this._onScroll);
+    if (this._onMeasure) window.removeEventListener('resize', this._onMeasure);
+    if (this._streamTimer) clearInterval(this._streamTimer);
+    if (this._revealTimer) clearTimeout(this._revealTimer);
+    this._rowTimers && this._rowTimers.forEach(clearTimeout);
+    if (this._io) this._io.disconnect();
+    if (this.points) { this.points.geometry.dispose(); this.points = null; }
+    if (this._wire) { this._wire.geometry.dispose(); this._wire.material.dispose(); }
+    if (this.material) { this.material.dispose(); this.material = null; }
+    if (this._tex) { this._tex.dispose(); this._tex = null; }
+    this.shapes = null; this.seeds = null;
+    if (this.renderer) {
+      const ctx = this.renderer.getContext && this.renderer.getContext();
+      this.renderer.dispose();
+      const lose = ctx && ctx.getExtension && ctx.getExtension('WEBGL_lose_context');
+      if (lose) lose.loseContext();
+      this.renderer = null;
+    }
+  }
+
+  applyAccent() {
+    const r = document.documentElement;
+    r.style.setProperty('--iris', this.props.accentColor ?? '#8052ff');
+    r.style.setProperty('--saffron', '#ffb829');
+    r.style.setProperty('--verdant', '#15846e');
+  }
+
+  /* ---------- scroll reveals ---------- */
+  initReveals() {
+    const nodes = Array.from(document.querySelectorAll('[data-reveal]'));
+    nodes.forEach((n) => {
+      const d = parseInt(n.getAttribute('data-reveal') || '0', 10) * 90;
+      n.style.opacity = '0';
+      n.style.transform = 'translateY(30px)';
+      n.style.transition = 'opacity 900ms cubic-bezier(0.2,0.7,0.2,1) ' + d + 'ms, transform 900ms cubic-bezier(0.2,0.7,0.2,1) ' + d + 'ms';
+      n.style.willChange = 'opacity, transform';
+    });
+    // drop will-change once revealed so we don't hold ~30 composited layers
+    const show = (n) => {
+      n.style.opacity = '1';
+      n.style.transform = 'none';
+      setTimeout(() => { n.style.willChange = 'auto'; }, 1400);
+    };
+    this._io = new IntersectionObserver((entries) => {
+      entries.forEach((e) => { if (e.isIntersecting) { show(e.target); this._io.unobserve(e.target); } });
+    }, { rootMargin: '0px 0px -12% 0px', threshold: 0.1 });
+    nodes.forEach((n) => this._io.observe(n));
+    this._revealTimer = setTimeout(() => nodes.forEach(show), 2600);
+  }
+
+  initProgress() {
+    const bar = document.getElementById('sd-progress');
+    this.scroll = 0;
+    this.scrollSmooth = 0;
+    // cache the scroll extent so the scroll handler never forces layout
+    let max = 1;
+    const measure = () => { max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight); };
+    let queued = false;
+    const read = () => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(() => {
+        queued = false;
+        this.scroll = Math.min(1, Math.max(0, window.scrollY / max));
+        if (bar) bar.style.width = (this.scroll * 100).toFixed(2) + '%';
+      });
+    };
+    measure();
+    read();
+    this._onScroll = read;
+    this._onMeasure = () => { measure(); read(); };
+    window.addEventListener('scroll', read, { passive: true });
+    window.addEventListener('resize', this._onMeasure);
+    this.pointer = { x: 0, y: 0 };
+    this._onMove = (e) => {
+      this.pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
+      this.pointer.y = (e.clientY / window.innerHeight) * 2 - 1;
+    };
+    window.addEventListener('pointermove', this._onMove, { passive: true });
+  }
+
+  /* ---------- resolution stream ---------- */
+  initStream() {
+    const host = document.getElementById('sd-stream');
+    if (!host) return;
+    const domains = ['cdn.jsdelivr.net', 'analytics.trackerhub.net', 'mail.corp.internal', 'github.com', 'ads.metricpush.co', 's3.eu-west-2.amazonaws.com', 'auth.okta.com', 'beacon.pixelfarm.io', 'pkg.go.dev', 'time.cloudflare.com', 'sync.dropbox.com', 'fonts.gstatic.com'];
+    const sources = ['agent-04f1', 'agent-9c07', 'agent-2b8d', 'agent-71aa', '10.42.7.19', 'agent-c30e', '10.42.9.4'];
+    const pick = (a) => a[Math.floor(Math.random() * a.length)];
+    this._rowTimers = new Set();
+    this._streamTimer = setInterval(() => {
+      if (document.hidden || !host.isConnected) return;
+      const d = pick(domains);
+      const blocked = /tracker|ads\.|beacon/.test(d);
+      const res = blocked ? 'BLOCKED' : (Math.random() < 0.62 ? 'CACHE' : 'UPSTREAM');
+      const row = document.createElement('div');
+      row.style.cssText = 'display:grid;grid-template-columns:1.6fr 1fr 0.9fr;gap:18px;color:#bdbdbd;opacity:0;transform:translateY(-10px);transition:opacity 500ms ease,transform 500ms cubic-bezier(0.2,0.7,0.2,1);';
+      const c = blocked ? 'var(--saffron, #ffb829)' : '#ffffff';
+      row.innerHTML = '<span></span><span style="color:#9a9a9a"></span><span style="color:' + c + '"></span>';
+      row.children[0].textContent = d;
+      row.children[1].textContent = pick(sources);
+      row.children[2].textContent = res;
+      host.insertBefore(row, host.firstChild);
+      requestAnimationFrame(() => { row.style.opacity = '1'; row.style.transform = 'none'; });
+      while (host.children.length > 6) {
+        const last = host.lastElementChild;
+        if (host.children.length > 7) { last.remove(); continue; }
+        last.style.transition = 'opacity 400ms ease';
+        last.style.opacity = '0';
+        const id = setTimeout(() => { last.remove(); this._rowTimers.delete(id); }, 420);
+        this._rowTimers.add(id);
+        break;
+      }
+    }, 2200);
+  }
+
+  /* ---------- three.js constellation ---------- */
+  waitForThree() {
+    let tries = 0;
+    const tick = () => {
+      if (this.dead) return;
+      if (window.THREE) { try { this.initScene(); } catch (err) { console.warn('scene init failed', err); } return; }
+      if (tries++ > 200) return;
+      setTimeout(tick, 60);
+    };
+    tick();
+  }
+
+  triangleTexture() {
+    const T = window.THREE;
+    const s = 64;
+    const c = document.createElement('canvas');
+    c.width = s; c.height = s;
+    const g = c.getContext('2d');
+    g.clearRect(0, 0, s, s);
+    g.strokeStyle = '#ffffff';
+    g.lineWidth = 4;
+    g.lineJoin = 'round';
+    g.beginPath();
+    g.moveTo(s / 2, 8); g.lineTo(s - 8, s - 10); g.lineTo(8, s - 10); g.closePath();
+    g.stroke();
+    const tex = new T.CanvasTexture(c);
+    tex.needsUpdate = true;
+    return tex;
+  }
+
+  makeShapes(n, seeds) {
+    const out = [];
+    const push = (fn) => {
+      const a = new Float32Array(n * 3);
+      for (let i = 0; i < n; i++) {
+        const p = fn(seeds[i], i);
+        a[i * 3] = p[0]; a[i * 3 + 1] = p[1]; a[i * 3 + 2] = p[2];
+      }
+      out.push(a);
+    };
+    const sph = (s, r) => {
+      const th = Math.acos(2 * s.u - 1), ph = 2 * Math.PI * s.v;
+      return [r * Math.sin(th) * Math.cos(ph), r * Math.cos(th), r * Math.sin(th) * Math.sin(ph)];
+    };
+    // 0 — shell: the resolver perimeter
+    push((s) => {
+      const p = sph(s, 2.65 + (s.w - 0.5) * 0.35);
+      return p;
+    });
+    // 1 — organic two-lobe cloud
+    push((s) => {
+      const side = s.r < 0.5 ? -1 : 1;
+      const p = sph(s, 1.35 + s.w * 0.5);
+      return [p[0] * 1.05 + side * 1.05, p[1] * 1.15, p[2] * 0.85];
+    });
+    // 2 — relay: two clusters joined by a beam
+    push((s, i) => {
+      if (i % 3 === 0) {
+        const t = s.v * 2 - 1;
+        return [t * 3.4, (s.u - 0.5) * 0.28, (s.w - 0.5) * 0.28];
+      }
+      const side = s.r < 0.5 ? -1 : 1;
+      const p = sph(s, 0.55 + s.w * 0.5);
+      return [p[0] + side * 3.4, p[1], p[2]];
+    });
+    // 3 — dome / shield
+    push((s) => {
+      const p = sph(s, 3.05 + (s.w - 0.5) * 0.2);
+      return [p[0], Math.abs(p[1]) * 0.85 - 1.1, p[2]];
+    });
+    // 4 — wavy metric plane
+    push((s) => {
+      const x = (s.u - 0.5) * 9.2, z = (s.v - 0.5) * 9.2;
+      return [x, Math.sin(x * 0.75) * Math.cos(z * 0.75) * 0.5 + (s.w - 0.5) * 0.14, z];
+    });
+    // 5 — ring / orbit
+    push((s) => {
+      const a = s.u * Math.PI * 2, b = s.v * Math.PI * 2, R = 2.85, r = 0.42 + s.w * 0.18;
+      return [(R + r * Math.cos(b)) * Math.cos(a), r * Math.sin(b), (R + r * Math.cos(b)) * Math.sin(a)];
+    });
+    // 6 — reformed shell, tighter
+    push((s) => sph(s, 2.35 + (s.w - 0.5) * 0.55));
+    return out;
+  }
+
+  initScene() {
+    const T = window.THREE;
+    const canvas = document.getElementById('sd-scene');
+    if (!canvas) return;
+    const renderer = new T.WebGLRenderer({ canvas, alpha: true, antialias: false });
+    renderer.setClearColor(0x000000, 0);
+    renderer.setPixelRatio(Math.min(1.5, window.devicePixelRatio || 1));
+    renderer.setSize(window.innerWidth, window.innerHeight, false);
+    this.renderer = renderer;
+
+    const scene = new T.Scene();
+    const camera = new T.PerspectiveCamera(52, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(0, 0, 7.4);
+    const group = new T.Group();
+    scene.add(group);
+
+    const tex = this.triangleTexture();
+    const palette = ['#8052ff', '#8052ff', '#8052ff', '#a487ff', '#ffb829', '#15846e', '#ff5ec4', '#4f7dff'];
+    const material = new T.ShaderMaterial({
+      uniforms: { uTex: { value: tex }, uOpacity: { value: 1 }, uMix: { value: 0 }, uTime: { value: 0 }, uDrift: { value: 0.075 } },
+      vertexShader: 'attribute float aSize;\nattribute vec3 aColor;\nattribute vec3 aPosB;\nattribute float aPhase;\nuniform float uMix;\nuniform float uTime;\nuniform float uDrift;\nvarying vec3 vColor;\nvoid main(){ vColor = aColor; vec3 p = mix(position, aPosB, uMix); p.x += sin(uTime * 0.55 + aPhase) * uDrift; p.y += cos(uTime * 0.45 + aPhase * 1.7) * uDrift; p.z += sin(uTime * 0.38 + aPhase * 2.3) * uDrift; vec4 mv = modelViewMatrix * vec4(p, 1.0); gl_PointSize = aSize * (420.0 / max(0.001, -mv.z)); gl_Position = projectionMatrix * mv; }',
+      fragmentShader: 'uniform sampler2D uTex;\nuniform float uOpacity;\nvarying vec3 vColor;\nvoid main(){ vec4 t = texture2D(uTex, gl_PointCoord); if (t.a < 0.06) discard; gl_FragColor = vec4(vColor, t.a * uOpacity); }',
+      transparent: true,
+      depthWrite: false,
+      blending: T.AdditiveBlending
+    });
+    this.material = material;
+
+    const wireGeo = new T.IcosahedronGeometry(2.75, 1);
+    const wire = new T.LineSegments(
+      new T.WireframeGeometry(wireGeo),
+      new T.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.05 })
+    );
+    wireGeo.dispose();
+    group.add(wire);
+    this._wire = wire;
+
+    let points = null;
+    this.rebuildPoints = (n) => {
+      if (points) { group.remove(points); points.geometry.dispose(); }
+      const seeds = new Array(n);
+      for (let i = 0; i < n; i++) seeds[i] = { u: Math.random(), v: Math.random(), w: Math.random(), r: Math.random() };
+      this.shapes = this.makeShapes(n, seeds);
+      const geo = new T.BufferGeometry();
+      const col = new Float32Array(n * 3);
+      const size = new Float32Array(n);
+      const phase = new Float32Array(n);
+      const c = new T.Color();
+      for (let i = 0; i < n; i++) {
+        c.set(palette[Math.floor(Math.random() * palette.length)]);
+        col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
+        size[i] = 0.056 + Math.random() * 0.1;
+        phase[i] = seeds[i].r * 6.283;
+      }
+      const posA = new T.BufferAttribute(new Float32Array(this.shapes[0]), 3);
+      const posB = new T.BufferAttribute(new Float32Array(this.shapes[1]), 3);
+      posA.setUsage(T.DynamicDrawUsage); posB.setUsage(T.DynamicDrawUsage);
+      geo.setAttribute('position', posA);
+      geo.setAttribute('aPosB', posB);
+      geo.setAttribute('aColor', new T.BufferAttribute(col, 3));
+      geo.setAttribute('aSize', new T.BufferAttribute(size, 1));
+      geo.setAttribute('aPhase', new T.BufferAttribute(phase, 1));
+      points = new T.Points(geo, material);
+      points.frustumCulled = false;
+      group.add(points);
+      this.points = points;
+      this.count = n;
+      this.segment = -1;
+    };
+    const budget = window.innerWidth < 820 ? 2600 : 5200;
+    this.rebuildPoints(Math.max(800, Math.min(budget, this.props.particleCount ?? budget)));
+
+    let resizeTimer = null;
+    this._onResize = () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (this.dead) return;
+        renderer.setPixelRatio(Math.min(1.5, window.devicePixelRatio || 1));
+        renderer.setSize(window.innerWidth, window.innerHeight, false);
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+      }, 180);
+    };
+    window.addEventListener('resize', this._onResize);
+
+    const clock = new T.Clock();
+    let px = 0, py = 0, last = 0;
+    const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const intensity = reduced ? 0 : (this.props.motionIntensity ?? 1);
+    material.uniforms.uDrift.value = 0.075 * intensity;
+    const loop = () => {
+      if (this.dead) return;
+      this._raf = requestAnimationFrame(loop);
+      const t = clock.getElapsedTime();
+      // cap to ~40fps and idle out when the tab is hidden
+      if (document.hidden) return;
+      if (t - last < 0.024) return;
+      last = t;
+
+      this.scrollSmooth += (this.scroll - this.scrollSmooth) * 0.07;
+      const p = this.scrollSmooth;
+
+      const shapes = this.shapes;
+      const f = p * (shapes.length - 1);
+      let i0 = Math.floor(f);
+      if (i0 > shapes.length - 2) i0 = shapes.length - 2;
+      const raw = Math.min(1, Math.max(0, f - i0));
+      // the morph itself runs in the vertex shader; buffers only change when
+      // scroll crosses into a new segment (6 uploads for the whole page)
+      if (i0 !== this.segment) {
+        const attrs = this.points.geometry.attributes;
+        attrs.position.array.set(shapes[i0]);
+        attrs.aPosB.array.set(shapes[i0 + 1]);
+        attrs.position.needsUpdate = true;
+        attrs.aPosB.needsUpdate = true;
+        this.segment = i0;
+      }
+      material.uniforms.uMix.value = raw * raw * (3 - 2 * raw);
+      material.uniforms.uTime.value = t;
+
+      px += ((this.pointer ? this.pointer.x : 0) - px) * 0.05;
+      py += ((this.pointer ? this.pointer.y : 0) - py) * 0.05;
+      group.rotation.y = t * 0.045 * intensity + p * 2.4 + px * 0.35;
+      group.rotation.x = -p * 0.5 + py * 0.18;
+      group.position.x = 2.15 - p * 4.2;
+      group.position.y = Math.sin(p * Math.PI * 2) * 0.35;
+      camera.position.z = 7.4 - Math.sin(p * Math.PI) * 1.5;
+      wire.material.opacity = 0.05 * Math.max(0, 1 - p * 4);
+      wire.rotation.y = -t * 0.06;
+      material.uniforms.uOpacity.value = 0.55 + 0.45 * Math.abs(Math.cos(p * Math.PI));
+      renderer.render(scene, camera);
+    };
+    loop();
+  }
+
+  renderVals() { return {}; }
+}
+
+</script>
+</body>
+</html>
